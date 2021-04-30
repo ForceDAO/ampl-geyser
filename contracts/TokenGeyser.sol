@@ -242,7 +242,7 @@ contract TokenGeyser is IStaking, Ownable {
                 rewardAmount = computeNewReward(rewardAmount, newStakingShareSecondsToBurn, stakeTimeSec);
                 stakingShareSecondsToBurn = stakingShareSecondsToBurn.add(newStakingShareSecondsToBurn);
                 sharesLeftToBurn = sharesLeftToBurn.sub(lastStake.stakingShares);
-                accountStakes.length--;
+                accountStakes.pop();
             } else {
                 // partially redeem a past stake
                 newStakingShareSecondsToBurn = sharesLeftToBurn.mul(stakeTimeSec);
