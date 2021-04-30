@@ -1,8 +1,8 @@
-pragma solidity 0.5.0;
+pragma solidity ^0.8.0;
 
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./IStaking.sol";
 import "./TokenPool.sol";
@@ -28,8 +28,6 @@ import "./TokenPool.sol";
 contract TokenGeyser is IStaking, Ownable {
     using SafeMath for uint256;
 
-    event Staked(address indexed user, uint256 amount, uint256 total, bytes data);
-    event Unstaked(address indexed user, uint256 amount, uint256 total, bytes data);
     event TokensClaimed(address indexed user, uint256 amount);
     event TokensLocked(uint256 amount, uint256 durationSec, uint256 total);
     // amount: Unlocked tokens, total: Total locked tokens
@@ -52,7 +50,7 @@ contract TokenGeyser is IStaking, Ownable {
     uint256 public totalLockedShares = 0;
     uint256 public totalStakingShares = 0;
     uint256 private _totalStakingShareSeconds = 0;
-    uint256 private _lastAccountingTimestampSec = now;
+    uint256 private _lastAccountingTimestampSec = block.timestamp;
     uint256 private _maxUnlockSchedules = 0;
     uint256 private _initialSharesPerToken = 0;
 
@@ -102,7 +100,7 @@ contract TokenGeyser is IStaking, Ownable {
      * @param initialSharesPerToken Number of shares to mint per staking token on first stake.
      */
     constructor(IERC20 stakingToken, IERC20 distributionToken, uint256 maxUnlockSchedules,
-                uint256 startBonus_, uint256 bonusPeriodSec_, uint256 initialSharesPerToken) public {
+                uint256 startBonus_, uint256 bonusPeriodSec_, uint256 initialSharesPerToken) {
         // The start bonus must be some fraction of the max. (i.e. <= 100%)
         require(startBonus_ <= 10**BONUS_DECIMALS, 'TokenGeyser: start bonus too high');
         // If no period is desired, instead set startBonus = 100%
@@ -139,7 +137,7 @@ contract TokenGeyser is IStaking, Ownable {
      * @param amount Number of deposit tokens to stake.
      * @param data Not used.
      */
-    function stake(uint256 amount, bytes calldata data) external {
+    function stake(uint256 amount, bytes calldata data) external override {
         _stakeFor(msg.sender, msg.sender, amount);
     }
 
@@ -149,7 +147,7 @@ contract TokenGeyser is IStaking, Ownable {
      * @param amount Number of deposit tokens to stake.
      * @param data Not used.
      */
-    function stakeFor(address user, uint256 amount, bytes calldata data) external onlyOwner {
+    function stakeFor(address user, uint256 amount, bytes calldata data) external override onlyOwner {
         _stakeFor(msg.sender, user, amount);
     }
 
@@ -175,15 +173,15 @@ contract TokenGeyser is IStaking, Ownable {
         // 1. User Accounting
         UserTotals storage totals = _userTotals[beneficiary];
         totals.stakingShares = totals.stakingShares.add(mintedStakingShares);
-        totals.lastAccountingTimestampSec = now;
+        totals.lastAccountingTimestampSec = block.timestamp;
 
-        Stake memory newStake = Stake(mintedStakingShares, now);
+        Stake memory newStake = Stake(mintedStakingShares, block.timestamp);
         _userStakes[beneficiary].push(newStake);
 
         // 2. Global Accounting
         totalStakingShares = totalStakingShares.add(mintedStakingShares);
         // Already set in updateAccounting()
-        // _lastAccountingTimestampSec = now;
+        // _lastAccountingTimestampSec = block.timestamp;
 
         // interactions
         require(_stakingPool.token().transferFrom(staker, address(_stakingPool), amount),
@@ -198,7 +196,7 @@ contract TokenGeyser is IStaking, Ownable {
      * @param amount Number of deposit tokens to unstake / withdraw.
      * @param data Not used.
      */
-    function unstake(uint256 amount, bytes calldata data) external {
+    function unstake(uint256 amount, bytes calldata data) external override {
         _unstake(amount);
     }
 
@@ -236,7 +234,7 @@ contract TokenGeyser is IStaking, Ownable {
         uint256 rewardAmount = 0;
         while (sharesLeftToBurn > 0) {
             Stake storage lastStake = accountStakes[accountStakes.length - 1];
-            uint256 stakeTimeSec = now.sub(lastStake.timestampSec);
+            uint256 stakeTimeSec = block.timestamp.sub(lastStake.timestampSec);
             uint256 newStakingShareSecondsToBurn = 0;
             if (lastStake.stakingShares <= sharesLeftToBurn) {
                 // fully redeem a past stake
@@ -257,13 +255,13 @@ contract TokenGeyser is IStaking, Ownable {
         totals.stakingShareSeconds = totals.stakingShareSeconds.sub(stakingShareSecondsToBurn);
         totals.stakingShares = totals.stakingShares.sub(stakingSharesToBurn);
         // Already set in updateAccounting
-        // totals.lastAccountingTimestampSec = now;
+        // totals.lastAccountingTimestampSec = block.timestamp;
 
         // 2. Global Accounting
         _totalStakingShareSeconds = _totalStakingShareSeconds.sub(stakingShareSecondsToBurn);
         totalStakingShares = totalStakingShares.sub(stakingSharesToBurn);
         // Already set in updateAccounting
-        // _lastAccountingTimestampSec = now;
+        // _lastAccountingTimestampSec = block.timestamp;
 
         // interactions
         require(_stakingPool.transfer(msg.sender, amount),
@@ -319,7 +317,7 @@ contract TokenGeyser is IStaking, Ownable {
      * @param addr The user to look up staking information for.
      * @return The number of staking tokens deposited for addr.
      */
-    function totalStakedFor(address addr) public view returns (uint256) {
+    function totalStakedFor(address addr) public view override returns (uint256) {
         return totalStakingShares > 0 ?
             totalStaked().mul(_userTotals[addr].stakingShares).div(totalStakingShares) : 0;
     }
@@ -327,7 +325,7 @@ contract TokenGeyser is IStaking, Ownable {
     /**
      * @return The total number of deposit tokens staked globally, by all users.
      */
-    function totalStaked() public view returns (uint256) {
+    function totalStaked() public view override returns (uint256) {
         return _stakingPool.balance();
     }
 
@@ -336,7 +334,7 @@ contract TokenGeyser is IStaking, Ownable {
      * may be different. This function is required by EIP-900.
      * @return The deposit token used for staking.
      */
-    function token() external view returns (address) {
+    function token() external view override returns (address) {
         return address(getStakingToken());
     }
 
@@ -357,22 +355,22 @@ contract TokenGeyser is IStaking, Ownable {
 
         // Global accounting
         uint256 newStakingShareSeconds =
-            now
+            block.timestamp
             .sub(_lastAccountingTimestampSec)
             .mul(totalStakingShares);
         _totalStakingShareSeconds = _totalStakingShareSeconds.add(newStakingShareSeconds);
-        _lastAccountingTimestampSec = now;
+        _lastAccountingTimestampSec = block.timestamp;
 
         // User Accounting
         UserTotals storage totals = _userTotals[msg.sender];
         uint256 newUserStakingShareSeconds =
-            now
+            block.timestamp
             .sub(totals.lastAccountingTimestampSec)
             .mul(totals.stakingShares);
         totals.stakingShareSeconds =
             totals.stakingShareSeconds
             .add(newUserStakingShareSeconds);
-        totals.lastAccountingTimestampSec = now;
+        totals.lastAccountingTimestampSec = block.timestamp;
 
         uint256 totalUserRewards = (_totalStakingShareSeconds > 0)
             ? totalUnlocked().mul(totals.stakingShareSeconds).div(_totalStakingShareSeconds)
@@ -384,7 +382,7 @@ contract TokenGeyser is IStaking, Ownable {
             totals.stakingShareSeconds,
             _totalStakingShareSeconds,
             totalUserRewards,
-            now
+            block.timestamp
         );
     }
 
@@ -430,8 +428,8 @@ contract TokenGeyser is IStaking, Ownable {
 
         UnlockSchedule memory schedule;
         schedule.initialLockedShares = mintedLockedShares;
-        schedule.lastUnlockTimestampSec = now;
-        schedule.endAtSec = now.add(durationSec);
+        schedule.lastUnlockTimestampSec = block.timestamp;
+        schedule.endAtSec = block.timestamp.add(durationSec);
         schedule.durationSec = durationSec;
         unlockSchedules.push(schedule);
 
@@ -487,14 +485,14 @@ contract TokenGeyser is IStaking, Ownable {
 
         uint256 sharesToUnlock = 0;
         // Special case to handle any leftover dust from integer division
-        if (now >= schedule.endAtSec) {
+        if (block.timestamp >= schedule.endAtSec) {
             sharesToUnlock = (schedule.initialLockedShares.sub(schedule.unlockedShares));
             schedule.lastUnlockTimestampSec = schedule.endAtSec;
         } else {
-            sharesToUnlock = now.sub(schedule.lastUnlockTimestampSec)
+            sharesToUnlock = block.timestamp.sub(schedule.lastUnlockTimestampSec)
                 .mul(schedule.initialLockedShares)
                 .div(schedule.durationSec);
-            schedule.lastUnlockTimestampSec = now;
+            schedule.lastUnlockTimestampSec = block.timestamp;
         }
 
         schedule.unlockedShares = schedule.unlockedShares.add(sharesToUnlock);
