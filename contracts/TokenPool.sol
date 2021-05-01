@@ -12,6 +12,7 @@ contract TokenPool is Ownable {
     IERC20 public token;
 
     constructor(IERC20 _token) {
+        require(address(_token) != address(0), "TokenPool: cannot set 0 address");
         token = _token;
     }
 
