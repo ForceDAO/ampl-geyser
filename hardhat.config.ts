@@ -3,6 +3,7 @@ import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-etherscan";
 import { ethers } from "ethers";
+require("@nomiclabs/hardhat-truffle5");
 
 require("dotenv").config();
 
@@ -58,8 +59,8 @@ task("deploy-geyser", "Deploys new geyser contract")
 
     console.log("Geyser deployed to:", geyser.address);
     console.log(
-      `npx hardhat verify --contract contracts/geyser/TokenGeyser.sol:TokenGeyser --network rinkeby ${geyser.address} ${LP_TOKEN_ADDRESS} ${FORCE_TOKEN_ADDRESS} ${MAX_UNLOCK_SCHEDULES} ${START_BONUS} ${BONUS_PERIOD_SEC} ${INITIAL_SHARES_PER_TOKEN} ${STORAGE_ADDRESS}`
-    );
+      `npx hardhat verify --contract contracts/geyser/TokenGeyser.sol:TokenGeyser --network rinkeby ${geyser.address} ${LP_TOKEN_ADDRESS} ${FORCE_TOKEN_ADDRESS} ${MAX_UNLOCK_SCHEDULES} ${START_BONUS} ${BONUS_PERIOD_SEC} ${INITIAL_SHARES_PER_TOKEN}`
+    );// ${STORAGE_ADDRESS}
   });
 
 // You need to export an object to set up your config

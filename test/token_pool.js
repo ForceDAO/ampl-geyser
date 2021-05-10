@@ -4,17 +4,20 @@ const { expect } = require('chai');
 
 const _require = require('app-root-path').require;
 const BlockchainCaller = _require('/util/blockchain_caller');
-const chain = new BlockchainCaller(web3);
+//const chain = new BlockchainCaller(web3);
 
-const MockERC20 = contract.fromArtifact('MockERC20');
-const TokenPool = contract.fromArtifact('TokenPool');
+const MockERC20 = artifacts.require('MockERC20');
+const TokenPool = artifacts.require('TokenPool');
+//const MockERC20 = contract.fromArtifact('MockERC20');
+//const TokenPool = contract.fromArtifact('TokenPool');
 
 let token, otherToken, tokenPool, owner, anotherAccount;
 describe('tokenPool', function () {
   beforeEach('setup contracts', async function () {
-    const accounts = await chain.getUserAccounts();
-    owner = web3.utils.toChecksumAddress(accounts[0]);
-    anotherAccount = web3.utils.toChecksumAddress(accounts[8]);
+    const accounts = await hre.ethers.getSigners();
+    //const accounts = await chain.getUserAccounts();
+    owner = web3.utils.toChecksumAddress(accounts[0].address);
+    anotherAccount = web3.utils.toChecksumAddress(accounts[8].address);
 
     token = await MockERC20.new(1000);
     otherToken = await MockERC20.new(2000);

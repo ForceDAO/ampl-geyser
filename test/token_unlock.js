@@ -4,7 +4,7 @@ const { expect } = require('chai');
 
 const _require = require('app-root-path').require;
 const BlockchainCaller = _require('/util/blockchain_caller');
-const chain = new BlockchainCaller(web3);
+//const chain = new BlockchainCaller(web3);
 const {
   $AMPL,
   invokeRebase,
@@ -14,8 +14,10 @@ const {
   TimeController
 } = _require('/test/helper');
 
-const AmpleforthErc20 = contract.fromArtifact('UFragments');
-const TokenGeyser = contract.fromArtifact('TokenGeyser');
+const AmpleforthErc20 = artifacts.require('ERC20PresetFixedSupply');
+//const AmpleforthErc20 = artifacts.require('UFragments');
+const TokenGeyser = artifacts.require('TokenGeyser');
+//const AmpleforthErc20 = contract.fromArtifact('UFragments');
 
 const ONE_YEAR = 365 * 24 * 3600;
 const START_BONUS = 50;
@@ -24,9 +26,10 @@ const InitialSharesPerToken = 10 ** 6;
 
 let ampl, dist, owner, anotherAccount;
 async function setupContractAndAccounts () {
-  const accounts = await chain.getUserAccounts();
-  owner = web3.utils.toChecksumAddress(accounts[0]);
-  anotherAccount = web3.utils.toChecksumAddress(accounts[8]);
+  const accounts = await hre.ethers.getSigners();
+  //const accounts = await chain.getUserAccounts();
+  owner = web3.utils.toChecksumAddress(accounts[0].address);
+  anotherAccount = web3.utils.toChecksumAddress(accounts[8].address);
 
   ampl = await AmpleforthErc20.new();
   await ampl.initialize(owner);

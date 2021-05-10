@@ -4,26 +4,32 @@ const { expect } = require('chai');
 
 const _require = require('app-root-path').require;
 const BlockchainCaller = _require('/util/blockchain_caller');
-const chain = new BlockchainCaller(web3);
+//const { ethers } = require("hardhat");
+//const chain = new BlockchainCaller(web3);
 const {
   $AMPL,
   invokeRebase
 } = _require('/test/helper');
 
-const MockERC20 = contract.fromArtifact('MockERC20');
-const AmpleforthErc20 = contract.fromArtifact('UFragments');
-const TokenGeyser = contract.fromArtifact('TokenGeyser');
+const MockERC20 = artifacts.require('MockERC20');
+const AmpleforthErc20 = artifacts.require('ERC20PresetFixedSupply');
+//const AmpleforthErc20 = contract.fromArtifact('UFragments');
+const TokenGeyser = artifacts.require('TokenGeyser');
 const InitialSharesPerToken = 10 ** 6;
 
 let ampl, dist, owner, anotherAccount;
 describe('staking', function () {
   beforeEach('setup contracts', async function () {
-    const accounts = await chain.getUserAccounts();
-    owner = web3.utils.toChecksumAddress(accounts[0]);
-    anotherAccount = web3.utils.toChecksumAddress(accounts[8]);
-
+    console.log("here1")
+    const accounts = await hre.ethers.getSigners();
+    //const accounts = await chain.getUserAccounts();
+    console.log("accounts", accounts[0].address)
+    owner = web3.utils.toChecksumAddress(accounts[0].address);
+    anotherAccount = web3.utils.toChecksumAddress(accounts[8].address);
     ampl = await AmpleforthErc20.new();
+    console.log("here3")
     await ampl.initialize(owner);
+    console.log("here4")
     await ampl.setMonetaryPolicy(owner);
 
     const startBonus = 50;
@@ -224,9 +230,11 @@ describe('staking', function () {
 describe('rescueFundsFromStakingPool', function () {
   describe('when tokens gets air-dropped', function() {
     it('should allow the owner to claim them', async function() {
-      const accounts = await chain.getUserAccounts();
-      owner = web3.utils.toChecksumAddress(accounts[0]);
-      anotherAccount = web3.utils.toChecksumAddress(accounts[8]);
+      const accounts = await hre.ethers.getSigners();
+      //const accounts = await chain.getUserAccounts();
+      console.log("accounts", accounts[0].address)
+      owner = web3.utils.toChecksumAddress(accounts[0].address);
+      anotherAccount = web3.utils.toChecksumAddress(accounts[8].address);
 
       ampl = await AmpleforthErc20.new();
       await ampl.initialize(owner);
