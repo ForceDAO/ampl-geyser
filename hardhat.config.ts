@@ -4,9 +4,9 @@ import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-etherscan";
 import { ethers } from "ethers";
 require("@nomiclabs/hardhat-truffle5");
+import "solidity-coverage"
 
 require("dotenv").config();
-
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 const RINKEBY_PRIVATE_KEY = process.env.RINKEBY_PRIVATE_KEY;
@@ -60,7 +60,7 @@ task("deploy-geyser", "Deploys new geyser contract")
     console.log("Geyser deployed to:", geyser.address);
     console.log(
       `npx hardhat verify --contract contracts/geyser/TokenGeyser.sol:TokenGeyser --network rinkeby ${geyser.address} ${LP_TOKEN_ADDRESS} ${FORCE_TOKEN_ADDRESS} ${MAX_UNLOCK_SCHEDULES} ${START_BONUS} ${BONUS_PERIOD_SEC} ${INITIAL_SHARES_PER_TOKEN}`
-    );// ${STORAGE_ADDRESS}
+    );
   });
 
 // You need to export an object to set up your config
