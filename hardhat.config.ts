@@ -20,6 +20,11 @@ const BONUS_PERIOD_SEC = 5256000;
 const INITIAL_SHARES_PER_TOKEN = 1;
 const LP_TOKEN_ADDRESS = "0xB48E9b22Dace65F6A2B409871e154B85f4ED8B80";
 const FORCE_TOKEN_ADDRESS = "0x2c31b10ca416b82cec4c5e93c615ca851213d48d";
+const RINKEBY_FORCE_TOKEN_ADDRESS = "0x750BF5E51CbEF7911E0B8fd8a7479f986E3b2ef8";
+const RINKEBY_LP_TOKEN_ADDRESS = "0xEe364aE80c238b9Bb83EFC929644276Db4F94920";
+
+const GEYSER_ADDRESS = "0x750BF5E51CbEF7911E0B8fd8a7479f986E3b2ef8";
+const SAFE_ADDRESS = "0x0aF0625b772472d18825c104b9daE35f76d3f6E0";
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -50,6 +55,8 @@ task("deploy-geyser", "Deploys new geyser contract")
     const geyser = await Geyser.deploy(
         LP_TOKEN_ADDRESS,
         FORCE_TOKEN_ADDRESS,
+        // RINKEBY_LP_TOKEN_ADDRESS,
+        // RINKEBY_FORCE_TOKEN_ADDRESS,
         MAX_UNLOCK_SCHEDULES,
         START_BONUS,
         BONUS_PERIOD_SEC,
@@ -57,9 +64,19 @@ task("deploy-geyser", "Deploys new geyser contract")
     );
 
     console.log("Geyser deployed to:", geyser.address);
-    console.log(
-      `npx hardhat verify --contract contracts/geyser/TokenGeyser.sol:TokenGeyser --network rinkeby ${geyser.address} ${LP_TOKEN_ADDRESS} ${FORCE_TOKEN_ADDRESS} ${MAX_UNLOCK_SCHEDULES} ${START_BONUS} ${BONUS_PERIOD_SEC} ${INITIAL_SHARES_PER_TOKEN} ${STORAGE_ADDRESS}`
+  });
+
+task("transfer-to-multisig", "Transfers ownership to multisig")
+  .setAction(async (args, hre) => {
+    // const Geyser = await hre.ethers.getContractFactory("TokenGeyser");
+    const geyser = await hre.ethers.getContractAt(
+      "TokenGeyser",
+      GEYSER_ADDRESS
     );
+
+    await geyser.transferOwnership(SAFE_ADDRESS);
+
+    console.log("Geyser owner transferred to:", SAFE_ADDRESS);
   });
 
 // You need to export an object to set up your config
@@ -74,12 +91,12 @@ const config: HardhatUserConfig = {
     rinkeby: {
       url: `https://rinkeby.infura.io/v3/${INFURA_PROJECT_ID}`,
       accounts: [`0x${RINKEBY_PRIVATE_KEY}`],
-      gasPrice: ethers.utils.parseUnits("200", "gwei").toNumber(),
+      gasPrice: ethers.utils.parseUnits("300", "gwei").toNumber(),
     },
     mainnet: {
       url: `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`,
       accounts: [`0x${MAINNET_PRIVATE_KEY}`],
-      gasPrice: ethers.utils.parseUnits("110", "gwei").toNumber(),
+      gasPrice: ethers.utils.parseUnits("300", "gwei").toNumber(),
     },
     ganache: {
       url: "http://127.0.0.1:8545",
