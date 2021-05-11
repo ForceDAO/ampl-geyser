@@ -4,6 +4,12 @@ const { time } = require('@openzeppelin/test-helpers');
 const { web3 } = require('@openzeppelin/test-environment');
 const { expect } = require('chai');
 
+const { BigNumber } = require("ethers");
+const bigNum = (item) => BigNumber.from(item);
+const DECIMALS18 = 18;
+const amt = (amount) => bigNum(amount).pow(DECIMALS18);
+const log1 = console.log;
+
 const PERC_DECIMALS = 2;
 const AMPL_DECIMALS = 9;
 
@@ -110,4 +116,4 @@ async function setTimeForNextTransaction (target) {
   increaseTimeForNextTransaction(diff);
 }
 
-module.exports = {checkAmplAprox, checkSharesAprox, invokeRebase, $AMPL, setTimeForNextTransaction, TimeController, printMethodOutput, printStatus};
+module.exports = {checkAmplAprox, checkSharesAprox, invokeRebase, $AMPL, setTimeForNextTransaction, amt, log1, TimeController, printMethodOutput, printStatus};
