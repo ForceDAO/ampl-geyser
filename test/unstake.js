@@ -4,10 +4,10 @@ const { expect } = require('chai');
 const _require = require('app-root-path').require;
 
 const {
-  $AMPL,
-  invokeRebase,
-  checkAmplAprox,
-  TimeController
+  $AMPL, invokeRebase, 
+  timeForwardInSec, executeAsBlock, log1,
+  checkAmplAprox, logRed, logGreen, logWB, logGB
+  //TimeController
 } = _require('/test/helper');
 
 const AmpleforthErc20 = artifacts.require('MockERC20');
@@ -81,6 +81,7 @@ describe('unstaking', function () {
 
     describe('when rebase decreases supply', function () {
       beforeEach(async function () {
+        logGB("when rebase decreases supply")
         await dist.stake($AMPL(50), [], { from: anotherAccount });
         await time.increase(1);
       });
@@ -102,12 +103,14 @@ describe('unstaking', function () {
       // user is eligible for 100% of the reward,
       // unstakes 30 ampls, gets 60% of the reward (60 ampl)
       // user's final balance is 90 ampl, (20 remains staked), eligible rewards (40 ampl)
-      const timeController = new TimeController();
+      //const timeController = new TimeController();
       beforeEach(async function () {
+        logGB("when single user stakes once")
         await dist.lockTokens($AMPL(100), ONE_YEAR);
-        await timeController.initialize();
+        //await timeController.initialize();
         await dist.stake($AMPL(50), [], { from: anotherAccount });
-        await timeController.advanceTime(ONE_YEAR);
+        await timeForwardInSec(ONE_YEAR);
+        //await timeController.advanceTime(ONE_YEAR);
         await dist.updateAccounting({ from: anotherAccount });
         checkAmplAprox(await totalRewardsFor(anotherAccount), 100);
       });
@@ -147,13 +150,15 @@ describe('unstaking', function () {
       // user is eligible for 75% of the max reward,
       // unstakes 250 ampls, gets .5 * .75 * 1000 ampls
       // user's final balance is 625 ampl, (250 remains staked), eligible rewards (375 ampl)
-      const timeController = new TimeController();
+      //const timeController = new TimeController();
       const ONE_HOUR = 3600;
       beforeEach(async function () {
+        logGB("when single user unstake early with early bonus")
         await dist.lockTokens($AMPL(1000), ONE_HOUR);
-        timeController.initialize();
+        //timeController.initialize();
         await dist.stake($AMPL(500), [], { from: anotherAccount });
-        await timeController.advanceTime(12 * ONE_HOUR);
+        //await timeController.advanceTime(12 * ONE_HOUR);
+        await timeForwardInSec(12 * ONE_HOUR);
         await dist.updateAccounting({ from: anotherAccount });
         checkAmplAprox(await totalRewardsFor(anotherAccount), 1000);
       });
@@ -191,16 +196,20 @@ describe('unstaking', function () {
       // user stakes 50 ampls for 1/2 year, 50 ampls for 1/4 year, [50 ampls unlocked in this time ]
       // unstakes 30 ampls, gets 20% of the unlocked reward (10 ampl) ~ [30 * 0.25 / (50*0.25+50*0.5) * 50]
       // user's final balance is 40 ampl
-      const timeController = new TimeController();
+      //const timeController = new TimeController();
       beforeEach(async function () {
+        logGB("when single user stakes many times")
         await dist.lockTokens($AMPL(100), ONE_YEAR);
-        await timeController.initialize();
-        await timeController.advanceTime(ONE_YEAR / 100);
+        await timeForwardInSec(ONE_YEAR / 100);
+        //await timeController.initialize();
+        //await timeController.advanceTime(ONE_YEAR / 100);
         await dist.stake($AMPL(50), [], { from: anotherAccount });
-        await timeController.initialize();
-        await timeController.advanceTime(ONE_YEAR / 4);
+        await timeForwardInSec(ONE_YEAR / 4);
+        //await timeController.initialize();
+        //await timeController.advanceTime(ONE_YEAR / 4);
         await dist.stake($AMPL(50), [], { from: anotherAccount });
-        await timeController.advanceTime(ONE_YEAR / 4);
+        await timeForwardInSec(ONE_YEAR / 4);
+        //await timeController.advanceTime(ONE_YEAR / 4);
         await dist.updateAccounting({ from: anotherAccount });
       });
       it('checkTotalRewards', async function () {
@@ -220,19 +229,22 @@ describe('unstaking', function () {
       });
     });
 
-    describe('when single user performs unstake many times', function () {
+    describe('when single user unstakes many times', function () {
       // 100 ampls locked for 1 year,
       // user stakes 10 ampls, waits 1 year, stakes 10 ampls, waits 1 year,
       // unstakes 5 ampl, unstakes 5 ampl, unstakes 5 ampl
       // 3rd unstake should be worth twice the first one
-      const timeController = new TimeController();
+      //const timeController = new TimeController();
       beforeEach(async function () {
+        logGB("when single user unstakes many times")
         await dist.lockTokens($AMPL(100), ONE_YEAR);
-        await timeController.initialize();
+        //await timeController.initialize();
         await dist.stake($AMPL(10), [], { from: anotherAccount });
-        await timeController.advanceTime(ONE_YEAR);
+        await timeForwardInSec(ONE_YEAR);
+        //await timeController.advanceTime(ONE_YEAR);
         await dist.stake($AMPL(10), [], { from: anotherAccount });
-        await timeController.advanceTime(ONE_YEAR);
+        await timeForwardInSec(ONE_YEAR);
+        //await timeController.advanceTime(ONE_YEAR);
         await dist.updateAccounting({ from: anotherAccount });
         checkAmplAprox(await totalRewardsFor(anotherAccount), 100);
       });
@@ -264,16 +276,20 @@ describe('unstaking', function () {
       // userA stakes 50 ampls for 3/4 year, userb stakes 50 ampl for 1/2 year, total unlocked 75 ampl
       // userA unstakes 30 ampls, gets 36% of the unlocked reward (27 ampl) ~ [30 * 0.75 / (50*0.75+50*0.5) * 75]
       // user's final balance is 57 ampl
-      const timeController = new TimeController();
+      //const timeController = new TimeController();
       beforeEach(async function () {
+        logGB("when multiple users stake once")
         await dist.lockTokens($AMPL(100), ONE_YEAR);
-        await timeController.initialize();
-        await timeController.advanceTime(ONE_YEAR / 100);
+        await timeForwardInSec(ONE_YEAR / 100);
+        //await timeController.initialize();
+        //await timeController.advanceTime(ONE_YEAR / 100);
         await dist.stake($AMPL(50), [], { from: anotherAccount });
-        await timeController.initialize();
-        await timeController.advanceTime(ONE_YEAR / 4);
+        await timeForwardInSec(ONE_YEAR / 4);
+        //await timeController.initialize();
+        //await timeController.advanceTime(ONE_YEAR / 4);
         await dist.stake($AMPL(50), []);
-        await timeController.advanceTime(ONE_YEAR / 2);
+        await timeForwardInSec(ONE_YEAR / 2);
+        //await timeController.advanceTime(ONE_YEAR / 2);
         await dist.updateAccounting({ from: anotherAccount });
         await dist.updateAccounting();
         expect(await dist.totalStaked.call()).to.be.bignumber.equal($AMPL(100));
@@ -309,25 +325,44 @@ describe('unstaking', function () {
       //        ~ [5000*0.75+5000*0.25 / (5000*0.75+5000*0.25+5000*0.5+3000*0.25) * 7500]
       // user's final balance is 14545 ampl
       // userb unstakes 8000 ampls, gets the 10955 ampl
-      const timeController = new TimeController();
+      //const timeController = new TimeController();
       const rewardsAnotherAccount = 50000.0 / 11.0;
       const rewardsOwner = 32500.0 / 11.0;
       beforeEach(async function () {
-        await timeController.executeAsBlock(function () {
-          dist.lockTokens($AMPL(10000), ONE_YEAR);
-          dist.stake($AMPL(5000), [], { from: anotherAccount });
-        });
-        await timeController.initialize();
-        await timeController.advanceTime(ONE_YEAR / 4);
+        logGB("when multiple users stake many times")
+        //await timeController.executeAsBlock(function () {
+        dist.lockTokens($AMPL(10000), ONE_YEAR);
+        // await executeAsBlock(function () {
+        //   //dist.lockTokens($AMPL(10000), ONE_YEAR);
+        //   //dist.stake($AMPL(5000), [], { from: anotherAccount });
+        // });
+        await timeForwardInSec(ONE_YEAR / 4);
+        // 1/4
+        dist.stake($AMPL(5000), [], { from: anotherAccount });//added
+        //await timeController.initialize();
+        //await timeController.advanceTime(ONE_YEAR / 4);
+        //await dist.stake($AMPL(5000), []);
+
+        await timeForwardInSec(ONE_YEAR / 4);
+        // 1/2
+        //await timeController.advanceTime(ONE_YEAR / 4);
+        //await dist.stake($AMPL(5000), [], { from: anotherAccount });
         await dist.stake($AMPL(5000), []);
-        await timeController.advanceTime(ONE_YEAR / 4);
-        await dist.stake($AMPL(5000), [], { from: anotherAccount });
-        await dist.stake($AMPL(3000), []);
-        await timeController.advanceTime(ONE_YEAR / 4);
+
+        await timeForwardInSec(ONE_YEAR / 4);
+        // 3/4
+        await dist.stake($AMPL(5000), [], { from: anotherAccount });//added
+        await dist.stake($AMPL(3000), []);//added
+        //await timeController.advanceTime(ONE_YEAR / 4);
+
+        await timeForwardInSec(ONE_YEAR / 4 + 30);
+        // 4/4
         await dist.updateAccounting({ from: anotherAccount });
         await dist.updateAccounting();
         expect(await dist.totalStaked.call()).to.be.bignumber.equal($AMPL(18000));
+    log1("here1")
         checkAmplAprox(await totalRewardsFor(anotherAccount), rewardsAnotherAccount);
+    log1("here2")
         checkAmplAprox(await totalRewardsFor(owner), rewardsOwner);
       });
       it('should update the total staked and rewards', async function () {
@@ -361,18 +396,26 @@ describe('unstaking', function () {
     // 100 ampls locked for 1 year, user stakes 50 ampls for 1 year
     // user is eligible for 100% of the reward,
     // unstakes 30 ampls, gets 60% of the reward (60 ampl)
-    const timeController = new TimeController();
+    //const timeController = new TimeController();
     beforeEach(async function () {
+      logGB("unstakeQuery")
       await dist.lockTokens($AMPL(100), ONE_YEAR);
       await dist.stake($AMPL(50), [], { from: anotherAccount });
-      await timeController.initialize();
-      await timeController.advanceTime(ONE_YEAR);
+      await timeForwardInSec(ONE_YEAR);
+      //await timeController.initialize();
+      //await timeController.advanceTime(ONE_YEAR);
       await dist.updateAccounting({ from: anotherAccount });
     });
     it('should return the reward amount', async function () {
       checkAmplAprox(await totalRewardsFor(anotherAccount), 100);
+      //checkAprox(totalUserReward, $AMPL(y), 10 ** 6);
       const a = await dist.unstakeQuery.call($AMPL(30), { from: anotherAccount });
       checkAmplAprox(a, 60);
     });
   });
 });
+/*
+async function totalRewardsFor (account) {
+  return (await dist.updateAccounting.call({ from: account }))[4];//totalUserRewards
+}
+*/

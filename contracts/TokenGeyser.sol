@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./IStaking.sol";
 import "./TokenPool.sol";
-import "hardhat/console.sol";
 
 /**
  * @title Token Geyser
@@ -170,11 +169,9 @@ contract TokenGeyser is IStaking, Ownable {
         require(totalStakingShares == 0 || totalStaked() > 0,
                 'TokenGeyser: Invalid state. Staking shares exist, but no staking tokens do');
 
-        console.log("[sc] amount:", amount, ", totalStaked:", totalStaked());
         uint256 mintedStakingShares = (totalStakingShares > 0)
             ? totalStakingShares.mul(amount).div(totalStaked())
             : amount.mul(_initialSharesPerToken);
-        console.log("[sc] mintedStakingShares:",mintedStakingShares, ", totalStakingShares:", totalStakingShares);
         require(mintedStakingShares > 0, 'TokenGeyser: Stake amount is too small');
 
         updateAccounting();
