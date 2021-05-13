@@ -4,8 +4,7 @@ const { expect } = require('chai');
 const _require = require('app-root-path').require;
 const {
   $AMPL, amt, log1,
-  invokeRebase
-} = _require('/test/helper');
+} = _require('/test/helper');//  invokeRebase
 
 const MockERC20 = artifacts.require('MockERC20');
 const AmpleforthErc20 = artifacts.require('MockERC20');

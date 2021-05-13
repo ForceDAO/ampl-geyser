@@ -7,9 +7,6 @@ cache/
 coverage.json
 coverage/
 archives
-contractsArchives
-preGitAdd.sh
-postGit.sh
 
 ### Emacs ##
 *~

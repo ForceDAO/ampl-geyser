@@ -5,15 +5,19 @@ const { web3 } = require('@openzeppelin/test-environment');
 const { expect } = require('chai');
 
 //--------------------==
+const { ethers } = require("hardhat");
 const { BigNumber } = require("ethers");
+const chalk = require('chalk');
+
 const bigNum = (item) => BigNumber.from(item);
 const DECIMALS18 = 18;
 const amt = (amount) => bigNum(amount).pow(DECIMALS18);
 const log1 = console.log;
 
-const chalk = require('chalk');
 const logRed = (text) => console.log(chalk.red(text))
 const logGreen = (text) => console.log(chalk.green(text))
+const logMagenta = (text) => console.log(chalk.magentaBright(text))
+const logCyan = (text) => console.log(chalk.cyanBright(text))
 const logWB = (text) => console.log(chalk.white.bgBlue.bold(text))
 const logGB = (text) => console.log(chalk.green.bgBlue.bold(text))
 
@@ -48,7 +52,30 @@ function checkAprox (x, y, delta_) {
   const lower = y.sub(delta);
   expect(x).to.be.bignumber.at.least(lower).and.bignumber.at.most(upper);
 }
+//--------------------==
+const fromWeiE = (weiAmount, dp = AMPL_DECIMALS) => {
+  try {
+    return ethers.utils.formatUnits(weiAmount.toString(), parseInt(dp));
+  } catch (err) {
+    console.error("fromWeiE() failed:", err);
+    return -1;
+  }
+}//input: BN or string, dp = 6 or 18 number, output: string
 
+const toWeiE = (amount, dp = AMPL_DECIMALS) => {
+  try {
+    return ethers.utils.parseUnits(amount.toString(), parseInt(dp));
+  } catch (err) {
+    console.error("toWeiE() failed:", err);
+    return -1;
+  }
+}//input: string, output: Bn
+
+const fromWei = (weiAmount) => fromWeiE(weiAmount);
+//web3.utils.fromWei(weiAmount.toString(), "ether");
+
+const toWei = (amount) => toWeiE(amount);
+//web3.utils.toWei(amount.toString(), "ether");
 //--------------------==
 const jsonrpc = "2.0";
 const id = 0; //31337
@@ -63,7 +90,17 @@ const timeForwardInSec = async (seconds) => {
 
 const timeForward = async (seconds) => {
   await makeRPC("evm_increaseTime", [seconds]);
-  await makeRPC("evm_mine");
+  await makeRPC("evm_mine");//manually mine new blocks 
+};
+const setAutomine = async (isMining) => {
+  await network.provider.send("evm_setAutomine", [isMining])
+};
+const setIntervalMining = async (intervalSeconds) => {
+  await network.provider.send("evm_setIntervalMining", [intervalSeconds])
+};
+const getSnapshot = async () => {
+  const snapshot = await network.provider.send("evm_snapshot", [])
+  log1("snapshot:", snapshot)
 };
 const minerStop = async () => {
 //{"method": "miner_stop", "params": []}
@@ -75,14 +112,13 @@ const minerStart = async (numberOfThreads = 2) => {
 };
 
 const executeAsBlock = async (Transactions) => {
-  //await makeRPC("evm_increaseTime", [0]);
-  //await minerStop();
+  await setAutomine(false);
   Transactions();
-  //await minerStart();
-  //await makeRPC("evm_mine");
+  await setAutomine(true);
+  await makeRPC("evm_mine");
 }
 const executeEmptyBlock = async() => {
-  await makeRPC("evm_mine");
+  await makeRPC("evm_mine");//manually mine new blocks 
 }
 /**function advanceBlock () {
   return promisify(web3.currentProvider.send.bind(web3.currentProvider))({
@@ -167,6 +203,7 @@ async function setTimeForNextTransaction (target) {
   increaseTimeForNextTransaction(diff);
 }
 
-module.exports = {checkAmplAprox, checkSharesAprox, invokeRebase, $AMPL, setTimeForNextTransaction, TimeController, printMethodOutput, printStatus,
-  timeForwardInSec, executeAsBlock, amt, log1, executeEmptyBlock, logRed, logGreen, logWB, logGB
-};
+module.exports = {checkAmplAprox, checkSharesAprox, invokeRebase, $AMPL, setTimeForNextTransaction,  printMethodOutput, printStatus,
+  timeForwardInSec, setAutomine, setIntervalMining
+, executeAsBlock, getSnapshot, bigNum, amt, log1, executeEmptyBlock, logRed, logGreen, logWB, logGB, logMagenta, toWei, toWeiE, fromWei, fromWeiE
+};//TimeController
