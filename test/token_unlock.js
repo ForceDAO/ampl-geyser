@@ -4,10 +4,9 @@ const { expect } = require('chai');
 const _require = require('app-root-path').require;
 
 const {$AMPL, timeForwardInSec, executeEmptyBlock,
-  checkAmplAprox, checkSharesAprox, log1, logRed, getSnapshot, logMagenta, logGB, fromWei, toWei, bigNum
+  checkAmplAprox, checkSharesAprox, log1, logRed, getBlockTimestamp, getBlockTimestampBN, getSnapshot, logMagenta, logGB, fromWei, toWei, bigNum
 } = _require('/test/helper');//invokeRebase, TimeController, setTimeForNextTransaction,
 
-const isCtrtModified = process.env.CONTRACT_MODIFIED;
 const AmpleforthErc20 = artifacts.require('MockERC20');
 const TokenGeyser = artifacts.require('TokenGeyser');
 
@@ -34,22 +33,7 @@ async function checkAvailableToUnlock (dist, v) {
   // console.log('Total unlocked: ', u.toString(), 'total unlocked after: ', r[1].toString());
   checkAmplAprox(r[1].sub(u), v);
 }
-const getTimestamp = async() => {
-  //log1("isCtrtModified:", isCtrtModified)
-  if(isCtrtModified){
-    blockTimestamp = await dist.getTimestamp.call();
-    blockTimestamp = blockTimestamp.toString();
-    //logMagenta("blockTimestamp: "+ blockTimestamp)
-    return parseInt(blockTimestamp);
-  } else {
-    logMagenta("no getTimestamp function available")
-    return 0
-  }
-}
-const getTimestampBN = async() => {
-  const t1 = await getTimestamp();
-  return new BN(t1);
-}
+
 const getBalanceLockedPool = async() => {
   const bce = await dist.totalLocked.call();
   logMagenta("balanceLockedPool: "+fromWei(bce))
@@ -269,27 +253,27 @@ describe('LockedPool', function () {
     describe('multi schedule', function () {
       beforeEach(async function () {
         logGB("multi schedule")
-        //const t0 = await getTimestamp();
+        //const t0 = await getBlockTimestamp();
         //logMagenta("t0: "+ t0);
         await ampl.approve(dist.address, $AMPL(200));
         await getBalanceLockedPool();
 
-        const t1 = await getTimestamp();
+        const t1 = await getBlockTimestamp();
         logMagenta("t1: "+ t1);
         await dist.lockTokens($AMPL(100), ONE_YEAR);
-        const t2 = await getTimestamp();
+        const t2 = await getBlockTimestamp();
         logMagenta("t2: "+ t2);
         await getBalanceLockedPool();
 
         const offset = 1;//usually between 1 and 2
         await timeForwardInSec(ONE_YEAR/2-offset);
-        const t3 = await getTimestamp();
-        logMagenta("t3: "+ t3+", t3-t2: "+ (t3-t2)+", HALF_YEAR:"+ (ONE_YEAR / 2));
+        const t3 = await getBlockTimestamp();
+        logMagenta("t3: "+ t3+", t3-t2: "+ (t3-t2)+", HALF_YEAR: "+ (ONE_YEAR / 2));
         await getBalanceLockedPool();
 
         await dist.lockTokens($AMPL(100), ONE_YEAR);
-        const t4 = await getTimestamp();
-        logMagenta("t4: "+ t4+", t4-t2:"+ (t4-t2)+", HALF_YEAR:"+ (ONE_YEAR / 2));
+        const t4 = await getBlockTimestamp();
+        logMagenta("t4: "+ t4+", t4-t2: "+ (t4-t2)+", HALF_YEAR: "+ (ONE_YEAR / 2));
         if((t4-t2) !== (ONE_YEAR/2)){
           logRed("Change the offset value to make t4-t2 === ONE_YEAR/2")
         }
@@ -349,7 +333,7 @@ describe('LockedPool', function () {
     beforeEach(async function () {
       logGB("updateAccounting")
       _r = await dist.updateAccounting.call({ from: owner });
-      _t = await getTimestampBN();
+      _t = await getBlockTimestampBN();
       await ampl.approve(dist.address, $AMPL(300));
       await dist.stake($AMPL(100), []);
 
@@ -364,7 +348,7 @@ describe('LockedPool', function () {
     describe('when user history does exist', async function () {
       it('should return the system state', async function () {
         const r = await dist.updateAccounting.call({ from: owner });
-        const t = await getTimestampBN();
+        const t = await getBlockTimestampBN();
         checkAmplAprox(r[0], 130);
         checkAmplAprox(r[1], 70);
         const timeElapsed = t.sub(_t);
@@ -386,7 +370,7 @@ describe('LockedPool', function () {
     describe('when user history does not exist', async function () {
       it('should return the system state', async function () {
         const r = await dist.updateAccounting.call({ from: constants.ZERO_ADDRESS });
-        const t = await getTimestampBN();
+        const t = await getBlockTimestampBN();
         checkAmplAprox(r[0], 130);
         checkAmplAprox(r[1], 70);
         const timeElapsed = t.sub(_t);
@@ -457,7 +441,7 @@ describe('LockedPool', function () {
     //   beforeEach(async function () {
     //     await ampl.approve(dist.address, $AMPL(150));
     //     await dist.lockTokens($AMPL(100), ONE_YEAR);
-    //     currentTime = await getTimestampBN();
+    //     currentTime = await getBlockTimestampBN();
     //await time.latest();
     //     checkAmplAprox(await dist.totalLocked.call(), 100);
     //     //await invokeRebase(ampl, -50);

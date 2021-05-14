@@ -3,7 +3,7 @@ const { expect } = require('chai');
 
 const _require = require('app-root-path').require;
 
-const {$AMPL, timeForwardInSec, executeAsBlock, checkAmplAprox, log1, logRed, logGreen, logWB, logGB, logMagenta
+const {$AMPL, timeForwardInSec, executeAsBlock, getBlockTimestamp, checkAmplAprox, log1, logRed, logGreen, logWB, logGB, logMagenta
 } = _require('/test/helper');//invokeRebase, TimeController
 
 const isCtrtModified = process.env.CONTRACT_MODIFIED;
@@ -34,18 +34,6 @@ async function setupContractAndAccounts () {
 
 async function totalRewardsFor (account) {
   return (await dist.updateAccounting.call({ from: account }))[4];
-}
-const getTimestamp = async() => {
-  //log1("isCtrtModified:", isCtrtModified)
-  if(isCtrtModified){
-    blockTimestamp = await dist.getTimestamp.call();
-    blockTimestamp = blockTimestamp.toString();
-    //logMagenta("blockTimestamp: "+ blockTimestamp)
-    return parseInt(blockTimestamp);
-  } else {
-    logMagenta("no getTimestamp function available")
-    return 0
-  }
 }
 
 describe('unstaking', function () {
@@ -323,7 +311,7 @@ describe('unstaking', function () {
       const rewardsOwner = 32500.0 / 11.0;
       beforeEach(async function () {
         logGB("when multiple users stake many times")
-        const t0 = await getTimestamp();
+        const t0 = await getBlockTimestamp();
         logMagenta("t0: "+ t0)
         await dist.lockTokens($AMPL(10000), ONE_YEAR);
         await dist.stake($AMPL(5000), [], { from: anotherAccount });
@@ -331,31 +319,31 @@ describe('unstaking', function () {
         //   dist.lockTokens($AMPL(10000), ONE_YEAR);
         //   dist.stake($AMPL(5000), [], { from: anotherAccount });
         // });
-        const t1 = await getTimestamp();
+        const t1 = await getBlockTimestamp();
         logMagenta("t1: "+ t1)
         await timeForwardInSec(ONE_QUARTER);
-        const t2 = await getTimestamp();
+        const t2 = await getBlockTimestamp();
         logMagenta("t2: "+ t2)
         log1("t2-t1:", t2-t1, ONE_QUARTER)
         // 1/4
         await dist.stake($AMPL(5000), []);
 
-        const t3 = await getTimestamp();
+        const t3 = await getBlockTimestamp();
         logMagenta("t3: "+ t3)
         await timeForwardInSec(ONE_QUARTER);
-        const t4 = await getTimestamp();
+        const t4 = await getBlockTimestamp();
         logMagenta("t4: "+ t4)
         log1("t4-t3:", t4-t3, ONE_QUARTER)
         // 1/2
         await dist.stake($AMPL(5000), [], { from: anotherAccount });
         await dist.stake($AMPL(3000), []);
 
-        const t5 = await getTimestamp();
+        const t5 = await getBlockTimestamp();
         logMagenta("t5: "+ t5)
 
         const offset = 3;//between 2 and 3
         await timeForwardInSec(ONE_QUARTER-offset);
-        const t6 = await getTimestamp();
+        const t6 = await getBlockTimestamp();
         logMagenta("t6: "+ t6)
         // 3/4
         log1("t6-t5:", t6-t5, ONE_QUARTER)

@@ -87,6 +87,17 @@ const timeForwardInSec = async (seconds) => {
   log1(chalk.green("\nOn Time Forward", seconds, "seconds"));
   await timeForward(seconds);
 };
+const getBlockTimestamp = async () => {
+  const blockNum = await makeRPC("eth_blockNumber");
+  const lastBlock = await makeRPC("eth_getBlockByNumber", [blockNum, true]);
+  const blockTimestamp = parseInt(lastBlock.timestamp);
+  log1("blockTimestamp:", blockTimestamp);
+  return blockTimestamp;
+};
+const getBlockTimestampBN = async() => {
+  const t1 = await getBlockTimestamp();
+  return new BN(t1);
+}
 
 const timeForward = async (seconds) => {
   await makeRPC("evm_increaseTime", [seconds]);
@@ -203,7 +214,7 @@ async function setTimeForNextTransaction (target) {
   increaseTimeForNextTransaction(diff);
 }
 
-module.exports = {checkAmplAprox, checkSharesAprox, invokeRebase, $AMPL, setTimeForNextTransaction,  printMethodOutput, printStatus,
-  timeForwardInSec, setAutomine, setIntervalMining
+module.exports = {checkAmplAprox, checkSharesAprox, invokeRebase, $AMPL, setTimeForNextTransaction,  printMethodOutput, printStatus, getBlockTimestamp,
+  getBlockTimestampBN, timeForwardInSec, setAutomine, setIntervalMining
 , executeAsBlock, getSnapshot, bigNum, amt, log1, executeEmptyBlock, logRed, logGreen, logWB, logGB, logMagenta, toWei, toWeiE, fromWei, fromWeiE
 };//TimeController
